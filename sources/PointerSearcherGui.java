@@ -29,6 +29,7 @@ import de.bullywiiplaza.hacking.pointer.utilities.SimpleProperties;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.awt.Toolkit;
@@ -434,8 +435,43 @@ public class PointerSearcherGui extends JFrame
 		}
 	}
 
+	private static String getJarName() throws FileNotFoundException
+	{
+		Class<PointerSearcherGui> theClass = PointerSearcherGui.class;
+
+		String path = theClass.getResource(theClass.getSimpleName() + ".class")
+				.getFile();
+		if (path.startsWith("/"))
+		{
+			throw new FileNotFoundException("This is not a jar file: \n" + path);
+		}
+
+		path = ClassLoader.getSystemClassLoader().getResource(path).getFile();
+
+		return new File(path.substring(0, path.lastIndexOf('!'))).getName().replaceAll("%20", " ");
+	}
+
 	public static void main(String[] arguments) throws Exception
 	{
+		Runtime runtime = Runtime.getRuntime();
+		String jarName;
+
+		try
+		{
+			jarName = getJarName();
+
+			if(runtime.maxMemory() < 70 * Math.pow(10, 9))
+			{
+				System.out.println(getJarName());
+				runtime.exec("java -Xmx80000m -jar \"" + jarName + "\"");
+
+				System.exit(0);
+			}
+		} catch (FileNotFoundException noJar)
+		{
+
+		}
+
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
 		new PointerSearcherGui().setVisible(true);
