@@ -42,11 +42,10 @@ public class PointerSearcherGui extends JFrame
 	private String maximumOffsetKey = "MAXIMUM_OFFSET";
 
 	private JTextArea resultsArea;
+	private JButton searchButton;
 
 	public PointerSearcherGui() throws Exception
 	{
-		setIconImage(Toolkit.getDefaultToolkit().getImage(
-				PointerSearcherGui.class.getResource("/images/Wii U.png")));
 		simpleProperties = new SimpleProperties();
 
 		setFrameProperties();
@@ -60,9 +59,10 @@ public class PointerSearcherGui extends JFrame
 		setResultsArea();
 	}
 
-	private void setSearchButton()
+	private void setSearchButton() throws IOException
 	{
-		JButton searchButton = new JButton("Perform Search");
+		searchButton = new JButton("Perform Search");
+		searchButton.setToolTipText("Performs a pointer search if at least a memory dump source directory is given");
 		searchButton.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent searchPerformed)
@@ -77,21 +77,32 @@ public class PointerSearcherGui extends JFrame
 					{
 						try
 						{
-							String storedTargetPath = simpleProperties
-									.get(memoryDumpsFolderKey);
-
-							int storedMaximumPointerOffset = Integer.parseInt(
-									simpleProperties.get(maximumOffsetKey), 16);
-							boolean storedAllowNegativeOffsets = Boolean
-									.parseBoolean(simpleProperties
-											.get(negativeOffsetsKey));
+							String storedMaximumPointerOffsetString = simpleProperties
+									.get(maximumOffsetKey);
+							String storedAllowNegativeOffsetsString = simpleProperties
+									.get(negativeOffsetsKey);
 
 							PointerSearch pointerSearch = new WiiUPointerSearch(
-									storedTargetPath);
-							pointerSearch
-									.setMaximumPointerOffset(storedMaximumPointerOffset);
-							pointerSearch
-									.setAllowNegativeOffsets(storedAllowNegativeOffsets);
+									simpleProperties.get(memoryDumpsFolderKey));
+
+							if (storedMaximumPointerOffsetString != null)
+							{
+								int storedMaximumPointerOffset = Integer
+										.parseInt(
+												storedMaximumPointerOffsetString,
+												16);
+								pointerSearch
+										.setMaximumPointerOffset(storedMaximumPointerOffset);
+							}
+
+							if (storedAllowNegativeOffsetsString != null)
+							{
+								boolean storedAllowNegativeOffsets = Boolean
+										.parseBoolean(storedAllowNegativeOffsetsString);
+								pointerSearch
+										.setAllowNegativeOffsets(storedAllowNegativeOffsets);
+							}
+
 							pointerSearch.performPointerSearch();
 							System.out.print("Pointer search completed!");
 						} catch (Exception e)
@@ -127,6 +138,7 @@ public class PointerSearcherGui extends JFrame
 		gbc_performSearchButton.gridx = 0;
 		gbc_performSearchButton.gridy = 0;
 		getContentPane().add(searchButton, gbc_performSearchButton);
+		setSearchButtonAvailability();
 	}
 
 	private void setResultsArea()
@@ -139,6 +151,7 @@ public class PointerSearcherGui extends JFrame
 		getContentPane().add(resultsLabel, gbc_resultsLabel);
 
 		resultsArea = new JTextArea();
+		resultsArea.setToolTipText("Results will be displayed here");
 		resultsArea.setEditable(false);
 		GridBagConstraints gbc_resultsArea = new GridBagConstraints();
 		gbc_resultsArea.fill = GridBagConstraints.BOTH;
@@ -259,7 +272,7 @@ public class PointerSearcherGui extends JFrame
 							insufficientBinaryFiles
 									.setOptions(new String[] { "OK" });
 							insufficientBinaryFiles
-									.addMessageText("The given folder has to contain at least two memory dumps (\".bin\" file extension)!");
+									.addMessageText("The given folder has to contain at least two memory dumps (\".bin\" files)!");
 							insufficientBinaryFiles.show();
 
 							actionPerformed(memoryDumpSelection);
@@ -267,6 +280,7 @@ public class PointerSearcherGui extends JFrame
 						{
 							simpleProperties.put(memoryDumpsFolderKey,
 									folderPathField.getText());
+							setSearchButtonAvailability();
 						}
 					}
 				} catch (IOException ioException)
@@ -289,6 +303,7 @@ public class PointerSearcherGui extends JFrame
 				{
 					simpleProperties.put(negativeOffsetsKey,
 							String.valueOf(isSelected));
+					setSearchButtonAvailability();
 				} catch (IOException e)
 				{
 					e.printStackTrace();
@@ -350,6 +365,7 @@ public class PointerSearcherGui extends JFrame
 						{
 							simpleProperties.put(maximumOffsetKey,
 									maximumPointerOffsetField.getText());
+							setSearchButtonAvailability();
 						} catch (IOException e)
 						{
 							e.printStackTrace();
@@ -400,7 +416,22 @@ public class PointerSearcherGui extends JFrame
 		setSize(500, 500);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setTitle("Wii U Pointer Search v2.0 by Bully@WiiPlaza");
+		setTitle("Wii U Pointer Search v2.1 by Bully@WiiPlaza");
+		setIconImage(Toolkit.getDefaultToolkit().getImage(
+				PointerSearcherGui.class.getResource("/images/Wii U.png")));
+	}
+
+	private void setSearchButtonAvailability() throws IOException
+	{
+		String storedTargetPath = simpleProperties.get(memoryDumpsFolderKey);
+
+		if (storedTargetPath != null)
+		{
+			searchButton.setEnabled(true);
+		} else
+		{
+			searchButton.setEnabled(false);
+		}
 	}
 
 	public static void main(String[] arguments) throws Exception

@@ -161,8 +161,18 @@ public abstract class PointerSearch
 		this.maximumPointerOffset = maximumPointerOffset;
 	}
 
+	public int getMaximumPointerOffset()
+	{
+		return maximumPointerOffset;
+	}
+
 	public void setAllowNegativeOffsets(boolean allowNegativeOffsets)
 	{
 		this.allowNegativeOffsets = allowNegativeOffsets;
+	}
+
+	public boolean getAllowNegativeOffsets()
+	{
+		return allowNegativeOffsets;
 	}
 }
