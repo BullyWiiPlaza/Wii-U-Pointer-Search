@@ -14,4 +14,7 @@ Searches can be fine-tuned via the `Options` menu. Select whether you want to in
 
 So far `pointer in pointer` searches are not supported but may be soon.
 
+Note:<br>
+If the application stops after reading the memory dumps it means that you ran out of memory. Make sure that you close most other applications to have enough RAM available. This application is very memory-hungry since Wii U memory dumps are huge.
+
 [1]: http://gbatemp.net/threads/wii-u-pointer-search.396232/
