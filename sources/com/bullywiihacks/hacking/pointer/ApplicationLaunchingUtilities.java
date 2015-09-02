@@ -50,7 +50,7 @@ public class ApplicationLaunchingUtilities
 		{
 			jarName = getJarName();
 
-			int grantedGigaBytes = 10;
+			int grantedGigaBytes = 50;
 
 			if (runtime.maxMemory() < 5 * Math.pow(10, 9))
 			{

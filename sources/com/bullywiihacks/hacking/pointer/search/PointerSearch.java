@@ -89,7 +89,8 @@ public abstract class PointerSearch
 
 		System.out.println("Performing pointer in pointer search...");
 
-		for (int baseOffset = 0; baseOffset < memoryDump1.getSize(); baseOffset += 4)
+		// We start later to prevent memory issues
+		for (int baseOffset = 0x2E000000; baseOffset < memoryDump1.getSize(); baseOffset += 4)
 		{
 			int readValue = memoryDump1.readValueAt(baseOffset);
 
@@ -151,8 +152,6 @@ public abstract class PointerSearch
 				}
 			}
 		}
-
-		System.out.println("Completed!");
 	}
 
 	/**
