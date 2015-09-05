@@ -1,13 +1,11 @@
 package com.bullywiihacks.hacking.pointer.search;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
+import com.bullywiihacks.hacking.pointer.IOUtilities;
 import com.bullywiihacks.hacking.pointer.memory.MemoryDump;
 import com.bullywiihacks.hacking.pointer.memory.MemoryBounds;
-import com.bullywiihacks.hacking.pointer.utilities.files.BinaryFilesDetector;
 
 /**
  * A class for performing pointer searches on memory dumps
@@ -23,31 +21,21 @@ public abstract class PointerSearch
 
 	public static final int INVALID_POINTER = -1;
 
-	public PointerSearch(String memoryDumpsFolder, int startingOffset)
+	public PointerSearch(List<MemoryDump> memoryDumps2, int startingOffset)
 			throws IOException
 	{
 		maximumPointerOffset = DEFAULT_MAXIMUM_POINTER_OFFSET;
 		allowNegativeOffsets = DEFAULT_ALLOW_NEGATIVE_OFFSETS;
-		memoryDumps = new ArrayList<>();
-		List<File> binaryFiles = BinaryFilesDetector
-				.getBinaryFiles(memoryDumpsFolder);
+		this.memoryDumps = memoryDumps2;
 
-		System.out.println("Reading memory dumps...");
-
-		for (File binaryFile : binaryFiles)
+		for (MemoryDump memoryDump : memoryDumps)
 		{
-			MemoryDump memoryDump = new MemoryDump(binaryFile.getAbsolutePath());
 			MemoryBounds memoryBounds = new MemoryBounds(startingOffset,
 					memoryDump.getSize());
 			memoryDump.setMemoryBounds(memoryBounds);
-
-			memoryDumps.add(memoryDump);
 		}
 	}
 
-	/**
-	 * Implements the logic of performing a pointer search
-	 */
 	public void performPointerSearch()
 	{
 		System.out.println("Performing pointer search...");
@@ -63,6 +51,11 @@ public abstract class PointerSearch
 				continue;
 			}
 
+			if(!IOUtilities.isDivisibleBy4(readValue))
+			{
+				continue;
+			}
+
 			int pointerOffset = memoryDump.getTargetAddress() - readValue;
 
 			if (!isAllowed(pointerOffset))
@@ -72,7 +65,8 @@ public abstract class PointerSearch
 
 			MemoryPointer memoryPointer = new MemoryPointer(baseOffset);
 			memoryPointer.addPointerOffset(pointerOffset);
-			memoryPointer.setStartingOffset(memoryDump.getMemoryBounds().getStartingOffset());
+			memoryPointer.setStartingOffset(memoryDump.getMemoryBounds()
+					.getStartingOffset());
 
 			if (memoryPointer.reachesTargetAddresses(memoryDumps))
 			{
@@ -95,6 +89,11 @@ public abstract class PointerSearch
 			int readValue = memoryDump1.readValueAt(baseOffset);
 
 			if (!memoryDump1.getMemoryBounds().isValidMemoryAddress(readValue))
+			{
+				continue;
+			}
+
+			if(!IOUtilities.isDivisibleBy4(readValue))
 			{
 				continue;
 			}
@@ -134,6 +133,11 @@ public abstract class PointerSearch
 					continue;
 				} else
 				{
+					if(!IOUtilities.isDivisibleBy4(readValue))
+					{
+						continue;
+					}
+
 					MemoryPointer memoryPointer = new MemoryPointer(baseOffset);
 					memoryPointer.addPointerOffset(innerOffsetIndex);
 					memoryPointer.setStartingOffset(memoryDump1
@@ -144,7 +148,7 @@ public abstract class PointerSearch
 
 					if (Math.abs(outerOffset) <= maximumPointerOffset)
 					{
-						if(allowNegativeOffsets || outerOffset > 0)
+						if (allowNegativeOffsets || outerOffset > 0)
 						{
 							System.out.println(memoryPointer);
 						}

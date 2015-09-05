@@ -20,8 +20,10 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 
+import com.bullywiihacks.hacking.pointer.memory.MemoryDump;
 import com.bullywiihacks.hacking.pointer.search.PointerSearch;
 import com.bullywiihacks.hacking.pointer.search.WiiUPointerSearch;
+import com.bullywiihacks.hacking.pointer.utilities.files.BinaryFilesReader;
 import com.bullywiihacks.hacking.pointer.utilities.files.SimpleProperties;
 import com.bullywiihacks.hacking.pointer.utilities.swing.CustomDialog;
 import com.bullywiihacks.hacking.pointer.utilities.swing.MessageConsole;
@@ -30,6 +32,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.awt.Toolkit;
 
 /**
@@ -39,15 +42,20 @@ import java.awt.Toolkit;
 public class PointerSearcherGui extends JFrame
 {
 	private String programName = "Wii U Pointer Search";
-	private String programVersion = "2.3";
+	private String programVersion = "2.4";
 	private String programAuthor = "Bully@WiiPlaza";
+
+	private PointerSearch pointerSearch;
 
 	private SimpleProperties simpleProperties;
 
 	private JTextArea resultsArea;
 	private JButton searchButton;
+	private JButton readButton;
 
-	public PointerSearcherGui() throws IOException
+	List<MemoryDump> memoryDumps;
+
+	public PointerSearcherGui() throws IOException, InterruptedException
 	{
 		simpleProperties = new SimpleProperties();
 
@@ -56,6 +64,8 @@ public class PointerSearcherGui extends JFrame
 		setMenuBar();
 
 		setFrameLayout();
+
+		setReadMemoryDumpsButton();
 
 		setSearchButton();
 
@@ -84,9 +94,7 @@ public class PointerSearcherGui extends JFrame
 						String storedAllowNegativeOffsetsString = simpleProperties
 								.get(OptionKeys.NEGATIVE_OFFSETS);
 
-						PointerSearch pointerSearch = new WiiUPointerSearch(
-								simpleProperties
-										.get(OptionKeys.MEMORY_DUMPS_FOLDER));
+						pointerSearch = new WiiUPointerSearch(memoryDumps);
 
 						if (storedMaximumPointerOffsetString != null)
 						{
@@ -130,9 +138,58 @@ public class PointerSearcherGui extends JFrame
 		GridBagConstraints gbc_performSearchButton = new GridBagConstraints();
 		gbc_performSearchButton.insets = new Insets(0, 0, 5, 0);
 		gbc_performSearchButton.gridx = 0;
-		gbc_performSearchButton.gridy = 0;
+		gbc_performSearchButton.gridy = 1;
 		getContentPane().add(searchButton, gbc_performSearchButton);
 		setSearchButtonAvailability();
+	}
+
+	private void setReadMemoryDumpsButton()
+	{
+		readButton = new JButton("Read memory dumps");
+
+		readButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent clickEvent)
+			{
+				resultsArea.setText("");
+				readButton.setEnabled(false);
+				String folder = simpleProperties
+						.get(OptionKeys.MEMORY_DUMPS_FOLDER);
+
+				System.out.print("Reading memory dump files into RAM... ");
+
+				new SwingWorker<String, String>()
+				{
+					@Override
+					protected String doInBackground() throws Exception
+					{
+						try
+						{
+							memoryDumps = BinaryFilesReader.readMemoryDumps(folder);
+
+							searchButton.setEnabled(true);
+							System.out.println("OK!");
+						} catch (IOException ioException)
+						{
+							ioException.printStackTrace();
+						}
+						finally
+						{
+							readButton.setEnabled(true);
+						}
+
+						return null;
+					}
+				}.execute();
+			}
+		});
+
+		GridBagConstraints gbc_readMemoryDumps = new GridBagConstraints();
+		gbc_readMemoryDumps.insets = new Insets(0, 0, 5, 0);
+		gbc_readMemoryDumps.gridx = 0;
+		gbc_readMemoryDumps.gridy = 0;
+		getContentPane().add(readButton, gbc_readMemoryDumps);
 	}
 
 	private void setResultsArea()
@@ -141,7 +198,7 @@ public class PointerSearcherGui extends JFrame
 		GridBagConstraints gbc_resultsLabel = new GridBagConstraints();
 		gbc_resultsLabel.insets = new Insets(0, 0, 5, 0);
 		gbc_resultsLabel.gridx = 0;
-		gbc_resultsLabel.gridy = 1;
+		gbc_resultsLabel.gridy = 2;
 		getContentPane().add(resultsLabel, gbc_resultsLabel);
 
 		resultsArea = new JTextArea();
@@ -150,7 +207,7 @@ public class PointerSearcherGui extends JFrame
 		GridBagConstraints gbc_resultsArea = new GridBagConstraints();
 		gbc_resultsArea.fill = GridBagConstraints.BOTH;
 		gbc_resultsArea.gridx = 0;
-		gbc_resultsArea.gridy = 2;
+		gbc_resultsArea.gridy = 3;
 		getContentPane().add(new JScrollPane(resultsArea), gbc_resultsArea);
 
 		MessageConsole messageConsole = new MessageConsole(resultsArea);
@@ -162,9 +219,9 @@ public class PointerSearcherGui extends JFrame
 	{
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] { 0, 0 };
-		gridBagLayout.rowHeights = new int[] { 0, 0, 0, 0 };
+		gridBagLayout.rowHeights = new int[] { 0, 0, 0, 0, 0 };
 		gridBagLayout.columnWeights = new double[] { 1.0, Double.MIN_VALUE };
-		gridBagLayout.rowWeights = new double[] { 0.0, 0.0, 1.0,
+		gridBagLayout.rowWeights = new double[] { 0.0, 0.0, 0.0, 1.0,
 				Double.MIN_VALUE };
 		getContentPane().setLayout(gridBagLayout);
 	}
@@ -253,25 +310,12 @@ public class PointerSearcherGui extends JFrame
 						folderNotExistsDialog.show();
 
 						actionPerformed(memoryDumpSelection);
-					} else if (!IOUtilities.enoughBinaryFiles(folderPath))
-					{
-						CustomDialog insufficientBinaryFiles = new CustomDialog();
-						insufficientBinaryFiles
-								.setMessageType(JOptionPane.ERROR_MESSAGE);
-						insufficientBinaryFiles.setTitle("Error");
-						insufficientBinaryFiles
-								.setOptions(new String[] { "OK" });
-						insufficientBinaryFiles
-								.addMessageText("The given folder has to contain at least one memory dump (\".bin\" file)!");
-						insufficientBinaryFiles.show();
-
-						actionPerformed(memoryDumpSelection);
-					} else
+					}
+					else
 					{
 						simpleProperties.put(
 								OptionKeys.MEMORY_DUMPS_FOLDER,
 								folderPathField.getText());
-						setSearchButtonAvailability();
 					}
 				}
 			}
@@ -288,7 +332,6 @@ public class PointerSearcherGui extends JFrame
 
 				simpleProperties.put(OptionKeys.NEGATIVE_OFFSETS,
 						String.valueOf(isSelected));
-				setSearchButtonAvailability();
 			}
 		});
 		optionsMenu.add(allowNegativeOffsetsCheckBox);
@@ -340,7 +383,6 @@ public class PointerSearcherGui extends JFrame
 					{
 						simpleProperties.put(OptionKeys.MAXIMUM_OFFSET,
 								maximumPointerOffsetField.getText());
-						setSearchButtonAvailability();
 
 					} else
 					{
@@ -372,7 +414,6 @@ public class PointerSearcherGui extends JFrame
 
 				simpleProperties.put(OptionKeys.POINTER_IN_POINTER,
 						String.valueOf(isSelected));
-				setSearchButtonAvailability();
 			}
 		});
 
@@ -399,16 +440,7 @@ public class PointerSearcherGui extends JFrame
 
 	private void setSearchButtonAvailability()
 	{
-		String storedTargetPath = simpleProperties
-				.get(OptionKeys.MEMORY_DUMPS_FOLDER);
-
-		if (storedTargetPath != null)
-		{
-			searchButton.setEnabled(true);
-		} else
-		{
-			searchButton.setEnabled(false);
-		}
+		searchButton.setEnabled(memoryDumps != null);
 	}
 
 	public static void main(String[] arguments) throws Exception
