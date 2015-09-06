@@ -17,9 +17,10 @@ public class MemoryPointer
 
 	public static final int INVALID_POINTER = -1;
 
-	public MemoryPointer(int baseOffset)
+	public MemoryPointer(int baseOffset, int startingOffset)
 	{
 		this.baseOffset = baseOffset;
+		setStartingOffset(startingOffset);
 		pointerOffsets = new ArrayList<>();
 	}
 

@@ -7,23 +7,25 @@ import java.io.File;
  */
 public class IOUtilities
 {
-	public static boolean binaryFilesFolderExists(String folder)
+	public static boolean folderExists(String folderPath)
 	{
-		return new File(folder).exists();
+		return new File(folderPath).exists();
 	}
 
+	/**
+	 * @param text The text to check
+	 * @return True if the input is valid hexadecimal false otherwise
+	 */
 	public static boolean isHexadecimal(String text)
 	{
 		return text.matches("^[0-9a-fA-F]+$");
 	}
 
+	/**
+	 * @return A File object representing the directory where the program has been started from
+	 */
 	public static File getWorkingDirectory()
 	{
 		return new File(System.getProperty("user.dir"));
-	}
-
-	public static boolean isDivisibleBy4(int number)
-	{
-		return number % 4 == 0;
 	}
 }

@@ -42,14 +42,14 @@ import java.awt.Toolkit;
 public class PointerSearcherGui extends JFrame
 {
 	private String programName = "Wii U Pointer Search";
-	private String programVersion = "2.4";
+	private String programVersion = "2.5";
 	private String programAuthor = "Bully@WiiPlaza";
 
 	private PointerSearch pointerSearch;
 
 	private SimpleProperties simpleProperties;
 
-	private JTextArea resultsArea;
+	private JTextArea outputTextArea;
 	private JButton searchButton;
 	private JButton readButton;
 
@@ -82,7 +82,7 @@ public class PointerSearcherGui extends JFrame
 			public void actionPerformed(ActionEvent searchPerformed)
 			{
 				searchButton.setEnabled(false);
-				resultsArea.setText("");
+				outputTextArea.setText("");
 
 				new SwingWorker<String, String>()
 				{
@@ -152,7 +152,7 @@ public class PointerSearcherGui extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent clickEvent)
 			{
-				resultsArea.setText("");
+				outputTextArea.setText("");
 				readButton.setEnabled(false);
 				String folder = simpleProperties
 						.get(OptionKeys.MEMORY_DUMPS_FOLDER);
@@ -201,16 +201,16 @@ public class PointerSearcherGui extends JFrame
 		gbc_resultsLabel.gridy = 2;
 		getContentPane().add(resultsLabel, gbc_resultsLabel);
 
-		resultsArea = new JTextArea();
-		resultsArea.setToolTipText("Results will be displayed here");
-		resultsArea.setEditable(false);
+		outputTextArea = new JTextArea();
+		outputTextArea.setToolTipText("Results will be displayed here");
+		outputTextArea.setEditable(false);
 		GridBagConstraints gbc_resultsArea = new GridBagConstraints();
 		gbc_resultsArea.fill = GridBagConstraints.BOTH;
 		gbc_resultsArea.gridx = 0;
 		gbc_resultsArea.gridy = 3;
-		getContentPane().add(new JScrollPane(resultsArea), gbc_resultsArea);
+		getContentPane().add(new JScrollPane(outputTextArea), gbc_resultsArea);
 
-		MessageConsole messageConsole = new MessageConsole(resultsArea);
+		MessageConsole messageConsole = new MessageConsole(outputTextArea);
 		messageConsole.redirectOut();
 		messageConsole.redirectErr(Color.RED, null);
 	}
@@ -298,7 +298,7 @@ public class PointerSearcherGui extends JFrame
 				{
 					String folderPath = folderPathField.getText();
 
-					if (!IOUtilities.binaryFilesFolderExists(folderPath))
+					if (!IOUtilities.folderExists(folderPath))
 					{
 						CustomDialog folderNotExistsDialog = new CustomDialog();
 						folderNotExistsDialog.setTitle("Error");

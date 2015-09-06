@@ -7,6 +7,8 @@ import java.nio.ByteBuffer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
+import com.bullywiihacks.hacking.pointer.search.PointerSearch;
+
 /**
  * A representation of a memory dump including helpful methods for pointer searches
  */
@@ -37,6 +39,20 @@ public class MemoryDump
 	public int readValueAt(int offset)
 	{
 		return memory.getInt(offset);
+	}
+
+	public int readPointerValue(int offset)
+	{
+		int readValue = readValueAt(offset);
+
+		if(!memoryBounds.isValidMemoryAddress(readValue))
+		{
+			return PointerSearch.INVALID_POINTER;
+		}
+		else
+		{
+			return readValue;
+		}
 	}
 
 	public int getTargetAddress()

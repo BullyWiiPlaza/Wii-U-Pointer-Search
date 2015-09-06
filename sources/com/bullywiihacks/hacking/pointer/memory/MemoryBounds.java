@@ -11,7 +11,7 @@ public class MemoryBounds
 	public MemoryBounds(int startingOffset, int memoryDumpSize)
 	{
 		this.startingOffset = startingOffset;
-		lastMemoryOffset = startingOffset + memoryDumpSize - 1;
+		lastMemoryOffset = startingOffset + memoryDumpSize - 4;
 	}
 
 	public boolean isValidMemoryAddress(int value)

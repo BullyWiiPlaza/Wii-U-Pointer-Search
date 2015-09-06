@@ -2,7 +2,10 @@ package com.bullywiihacks.hacking.pointer.search;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import com.bullywiihacks.hacking.pointer.HexadecimalNumber;
 import com.bullywiihacks.hacking.pointer.IOUtilities;
 import com.bullywiihacks.hacking.pointer.memory.MemoryDump;
 import com.bullywiihacks.hacking.pointer.memory.MemoryBounds;
@@ -14,6 +17,7 @@ public abstract class PointerSearch
 {
 	private int maximumPointerOffset;
 	private boolean allowNegativeOffsets;
+	private int startingOffset;
 	private List<MemoryDump> memoryDumps;
 
 	public static final int DEFAULT_MAXIMUM_POINTER_OFFSET = 0x1000;
@@ -21,12 +25,13 @@ public abstract class PointerSearch
 
 	public static final int INVALID_POINTER = -1;
 
-	public PointerSearch(List<MemoryDump> memoryDumps2, int startingOffset)
+	public PointerSearch(List<MemoryDump> memoryDumps, int startingOffset)
 			throws IOException
 	{
 		maximumPointerOffset = DEFAULT_MAXIMUM_POINTER_OFFSET;
 		allowNegativeOffsets = DEFAULT_ALLOW_NEGATIVE_OFFSETS;
-		this.memoryDumps = memoryDumps2;
+		this.startingOffset = startingOffset;
+		this.memoryDumps = memoryDumps;
 
 		for (MemoryDump memoryDump : memoryDumps)
 		{
@@ -42,32 +47,35 @@ public abstract class PointerSearch
 
 		MemoryDump memoryDump = memoryDumps.get(0);
 
-		for (int baseOffset = 0; baseOffset < memoryDump.getSize(); baseOffset += 4)
+		// Iterate over every file offset in the memory dump
+		for (int currentOffset = 0; currentOffset < memoryDump.getSize(); currentOffset += 4)
 		{
-			int readValue = memoryDump.readValueAt(baseOffset);
+			// Read its value
+			int readValue = memoryDump.readPointerValue(currentOffset);
 
-			if (!memoryDump.getMemoryBounds().isValidMemoryAddress(readValue))
+			// Move on to the next offset if no valid pointer has been read
+			if (readValue == INVALID_POINTER)
 			{
 				continue;
 			}
 
-			if(!IOUtilities.isDivisibleBy4(readValue))
-			{
-				continue;
-			}
+			int pointerValue = readValue;
 
-			int pointerOffset = memoryDump.getTargetAddress() - readValue;
+			// Calculate the distance between the target address and the pointer
+			// value
+			int pointerOffset = memoryDump.getTargetAddress() - pointerValue;
 
+			// Make sure constraints given by the user are held
 			if (!isAllowed(pointerOffset))
 			{
 				continue;
 			}
 
-			MemoryPointer memoryPointer = new MemoryPointer(baseOffset);
+			MemoryPointer memoryPointer = new MemoryPointer(currentOffset,
+					startingOffset);
 			memoryPointer.addPointerOffset(pointerOffset);
-			memoryPointer.setStartingOffset(memoryDump.getMemoryBounds()
-					.getStartingOffset());
 
+			// Verify the pointer on all given memory dumps
 			if (memoryPointer.reachesTargetAddresses(memoryDumps))
 			{
 				System.out.println(memoryPointer);
@@ -77,29 +85,20 @@ public abstract class PointerSearch
 
 	public void performPointerInPointerSearch()
 	{
-		int memoryDumpsIndex = 0;
-
-		MemoryDump memoryDump1 = memoryDumps.get(memoryDumpsIndex++);
-
 		System.out.println("Performing pointer in pointer search...");
 
-		// We start later to prevent memory issues
-		for (int baseOffset = 0x2E000000; baseOffset < memoryDump1.getSize(); baseOffset += 4)
+		MemoryDump memoryDump = memoryDumps.get(0);
+
+		for (int currentOffset = 0; currentOffset < memoryDump.getSize(); currentOffset += 4)
 		{
-			int readValue = memoryDump1.readValueAt(baseOffset);
+			int readValue = memoryDump.readPointerValue(currentOffset);
 
-			if (!memoryDump1.getMemoryBounds().isValidMemoryAddress(readValue))
+			if (readValue == INVALID_POINTER)
 			{
 				continue;
 			}
 
-			if(!IOUtilities.isDivisibleBy4(readValue))
-			{
-				continue;
-			}
-
-			int pointerOffset = readValue
-					- memoryDump1.getMemoryBounds().getStartingOffset();
+			int pointerOffset = readValue - startingOffset;
 
 			int startingIndex;
 			int lastIndex;
@@ -124,34 +123,29 @@ public abstract class PointerSearch
 					innerBaseOffset = 0;
 				}
 
-				readValue = memoryDump1.readValueAt(pointerOffset
-						+ innerOffsetIndex);
+				if (!memoryDump.getMemoryBounds().isValidMemoryAddress(
+						innerBaseOffset + startingOffset))
+				{
+					continue;
+				}
 
-				if (!memoryDump1.getMemoryBounds().isValidMemoryAddress(
-						readValue))
+				readValue = memoryDump.readPointerValue(innerBaseOffset);
+
+				if (readValue == INVALID_POINTER)
 				{
 					continue;
 				} else
 				{
-					if(!IOUtilities.isDivisibleBy4(readValue))
-					{
-						continue;
-					}
-
-					MemoryPointer memoryPointer = new MemoryPointer(baseOffset);
+					MemoryPointer memoryPointer = new MemoryPointer(
+							currentOffset, startingIndex);
 					memoryPointer.addPointerOffset(innerOffsetIndex);
-					memoryPointer.setStartingOffset(memoryDump1
-							.getMemoryBounds().getStartingOffset());
-					int outerOffset = memoryDump1.getTargetAddress()
-							- readValue;
+					int outerOffset = memoryDump.getTargetAddress() - readValue;
+
 					memoryPointer.addPointerOffset(outerOffset);
 
-					if (Math.abs(outerOffset) <= maximumPointerOffset)
+					if (isAllowed(outerOffset))
 					{
-						if (allowNegativeOffsets || outerOffset > 0)
-						{
-							System.out.println(memoryPointer);
-						}
+						System.out.println(memoryPointer);
 					}
 				}
 			}
