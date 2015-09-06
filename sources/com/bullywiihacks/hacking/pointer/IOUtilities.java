@@ -1,6 +1,10 @@
 package com.bullywiihacks.hacking.pointer;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 /**
  * Utility methods for verifying the correctness of user input
@@ -27,5 +31,25 @@ public class IOUtilities
 	public static File getWorkingDirectory()
 	{
 		return new File(System.getProperty("user.dir"));
+	}
+
+	public static void append(String fileName, String text) throws IOException
+	{
+		if(!new File(fileName).exists())
+		{
+			new File(fileName).createNewFile();
+		}
+
+		Files.write(Paths.get(fileName), text.concat(System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
+	}
+
+	public static void delete(String fileName)
+	{
+		File file = new File(fileName);
+
+		if(file.exists())
+		{
+			file.delete();
+		}
 	}
 }

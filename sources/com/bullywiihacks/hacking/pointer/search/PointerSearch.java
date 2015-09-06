@@ -2,10 +2,7 @@ package com.bullywiihacks.hacking.pointer.search;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import com.bullywiihacks.hacking.pointer.HexadecimalNumber;
 import com.bullywiihacks.hacking.pointer.IOUtilities;
 import com.bullywiihacks.hacking.pointer.memory.MemoryDump;
 import com.bullywiihacks.hacking.pointer.memory.MemoryBounds;
@@ -19,11 +16,10 @@ public abstract class PointerSearch
 	private boolean allowNegativeOffsets;
 	private int startingOffset;
 	private List<MemoryDump> memoryDumps;
+	private String pointerResultsFileName = "Pointers.txt";
 
 	public static final int DEFAULT_MAXIMUM_POINTER_OFFSET = 0x1000;
 	public static final boolean DEFAULT_ALLOW_NEGATIVE_OFFSETS = false;
-
-	public static final int INVALID_POINTER = -1;
 
 	public PointerSearch(List<MemoryDump> memoryDumps, int startingOffset)
 			throws IOException
@@ -41,9 +37,9 @@ public abstract class PointerSearch
 		}
 	}
 
-	public void performPointerSearch()
+	public void performPointerSearch(boolean storeToFile) throws IOException
 	{
-		System.out.println("Performing pointer search...");
+		IOUtilities.delete(pointerResultsFileName);
 
 		MemoryDump memoryDump = memoryDumps.get(0);
 
@@ -54,7 +50,7 @@ public abstract class PointerSearch
 			int readValue = memoryDump.readPointerValue(currentOffset);
 
 			// Move on to the next offset if no valid pointer has been read
-			if (readValue == INVALID_POINTER)
+			if (readValue == MemoryPointer.INVALID_POINTER)
 			{
 				continue;
 			}
@@ -78,14 +74,21 @@ public abstract class PointerSearch
 			// Verify the pointer on all given memory dumps
 			if (memoryPointer.reachesTargetAddresses(memoryDumps))
 			{
+				if (storeToFile)
+				{
+					IOUtilities.append(pointerResultsFileName,
+							memoryPointer.toString());
+				}
+
 				System.out.println(memoryPointer);
 			}
 		}
 	}
 
-	public void performPointerInPointerSearch()
+	public void performPointerInPointerSearch(boolean storeToFile)
+			throws IOException
 	{
-		System.out.println("Performing pointer in pointer search...");
+		IOUtilities.delete(pointerResultsFileName);
 
 		MemoryDump memoryDump = memoryDumps.get(0);
 
@@ -93,7 +96,7 @@ public abstract class PointerSearch
 		{
 			int readValue = memoryDump.readPointerValue(currentOffset);
 
-			if (readValue == INVALID_POINTER)
+			if (readValue == MemoryPointer.INVALID_POINTER)
 			{
 				continue;
 			}
@@ -131,13 +134,13 @@ public abstract class PointerSearch
 
 				readValue = memoryDump.readPointerValue(innerBaseOffset);
 
-				if (readValue == INVALID_POINTER)
+				if (readValue == MemoryPointer.INVALID_POINTER)
 				{
 					continue;
 				} else
 				{
 					MemoryPointer memoryPointer = new MemoryPointer(
-							currentOffset, startingIndex);
+							currentOffset, startingOffset);
 					memoryPointer.addPointerOffset(innerOffsetIndex);
 					int outerOffset = memoryDump.getTargetAddress() - readValue;
 
@@ -145,7 +148,16 @@ public abstract class PointerSearch
 
 					if (isAllowed(outerOffset))
 					{
-						System.out.println(memoryPointer);
+						if (memoryPointer.reachesTargetAddresses(memoryDumps))
+						{
+							if (storeToFile)
+							{
+								IOUtilities.append(pointerResultsFileName,
+										memoryPointer.toString());
+							}
+
+							System.out.println(memoryPointer);
+						}
 					}
 				}
 			}
@@ -159,7 +171,7 @@ public abstract class PointerSearch
 	 */
 	private boolean isAllowed(int pointerOffset)
 	{
-		if (pointerOffset == INVALID_POINTER)
+		if (pointerOffset == MemoryPointer.INVALID_POINTER)
 		{
 			return false;
 		}

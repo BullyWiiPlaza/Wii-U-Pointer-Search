@@ -10,7 +10,7 @@ public class Test
 {
 	public static void main(String[] args) throws IOException
 	{
-		MemoryPointer memoryPointer = new MemoryPointer(0x44);
+		MemoryPointer memoryPointer = new MemoryPointer(0x44, 0x10000000);
 		memoryPointer.setStartingOffset(0x10000000);
 		memoryPointer.addPointerOffset(-0x4);
 		memoryPointer.addPointerOffset(0xC);

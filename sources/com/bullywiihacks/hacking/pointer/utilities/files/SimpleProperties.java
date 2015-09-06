@@ -39,6 +39,10 @@ public class SimpleProperties
 		}
 	}
 
+	/**
+	 * @param key The key to use for looking up a value
+	 * @return The value corresponding to the key
+	 */
 	public String get(String key)
 	{
 		if (!new File(configurationFileName).exists())
