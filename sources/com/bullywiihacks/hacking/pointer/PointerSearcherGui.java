@@ -42,7 +42,7 @@ import java.awt.Toolkit;
 public class PointerSearcherGui extends JFrame
 {
 	private String programName = "Wii U Pointer Search";
-	private String programVersion = "2.6";
+	private String programVersion = "2.7";
 	private String programAuthor = "Bully@WiiPlaza";
 
 	private PointerSearch pointerSearch;
@@ -119,9 +119,10 @@ public class PointerSearcherGui extends JFrame
 										.setAllowNegativeOffsets(storedAllowNegativeOffsets);
 							}
 
-							if (!simpleProperties.get(
-									OptionKeys.POINTER_IN_POINTER).equals(
-									"true"))
+							String storedPointerInPointerValue = simpleProperties.get(
+									OptionKeys.POINTER_IN_POINTER);
+
+							if (storedPointerInPointerValue == null || storedPointerInPointerValue.equals("false"))
 							{
 								System.out.println("Performing pointer search...");
 
