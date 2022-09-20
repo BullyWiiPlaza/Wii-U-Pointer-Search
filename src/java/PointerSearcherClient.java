@@ -1,10 +1,10 @@
-package com.bullywiihacks.hacking.pointer;
+import com.bullywiihacks.hacking.pointer.ApplicationLaunchingUtilities;
 
 public class PointerSearcherClient
 {
 	public static void main(String[] arguments) throws Exception
 	{
-		ApplicationLaunchingUtilities.relaunchWithMoreMemory();
+		// ApplicationLaunchingUtilities.relaunchWithMoreMemory();
 		ApplicationLaunchingUtilities.runApplication();
 	}
 }
