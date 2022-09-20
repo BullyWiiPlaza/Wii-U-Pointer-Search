@@ -111,9 +111,7 @@ public class MemoryPointer
 			return INVALID_POINTER;
 		}
 
-		int pointerOffset = memoryDump.getTargetAddress() - readValue;
-
-		return pointerOffset;
+		return memoryDump.getTargetAddress() - readValue;
 	}
 
 	/**
@@ -133,11 +131,10 @@ public class MemoryPointer
 		pointerRepresentationBuilder.append(new HexadecimalNumber(baseOffset
 				+ startingOffset));
 
-		for (int pointerOffsetIndex = 0; pointerOffsetIndex < pointerOffsets
-				.size(); pointerOffsetIndex++)
+		for (Integer pointerOffset1 : pointerOffsets)
 		{
 			HexadecimalNumber pointerOffset = new HexadecimalNumber(
-					pointerOffsets.get(pointerOffsetIndex));
+					pointerOffset1);
 
 			pointerRepresentationBuilder.append("] ");
 

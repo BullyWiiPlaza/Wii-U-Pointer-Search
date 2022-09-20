@@ -19,7 +19,7 @@ public abstract class PointerSearch
 	private String pointerResultsFileName = "Pointers.txt";
 
 	public static final int DEFAULT_MAXIMUM_POINTER_OFFSET = 0x1000;
-	public static final boolean DEFAULT_ALLOW_NEGATIVE_OFFSETS = false;
+	private static final boolean DEFAULT_ALLOW_NEGATIVE_OFFSETS = false;
 
 	public PointerSearch(List<MemoryDump> memoryDumps, int startingOffset)
 			throws IOException
@@ -55,11 +55,9 @@ public abstract class PointerSearch
 				continue;
 			}
 
-			int pointerValue = readValue;
-
 			// Calculate the distance between the target address and the pointer
 			// value
-			int pointerOffset = memoryDump.getTargetAddress() - pointerValue;
+			int pointerOffset = memoryDump.getTargetAddress() - readValue;
 
 			// Make sure constraints given by the user are held
 			if (!isAllowed(pointerOffset))
@@ -76,8 +74,7 @@ public abstract class PointerSearch
 			{
 				if (storeToFile)
 				{
-					IOUtilities.append(pointerResultsFileName,
-							memoryPointer.toString());
+					IOUtilities.append(pointerResultsFileName, memoryPointer.toString());
 				}
 
 				System.out.println(memoryPointer);
@@ -134,10 +131,7 @@ public abstract class PointerSearch
 
 				readValue = memoryDump.readPointerValue(innerBaseOffset);
 
-				if (readValue == MemoryPointer.INVALID_POINTER)
-				{
-					continue;
-				} else
+				if (readValue != MemoryPointer.INVALID_POINTER)
 				{
 					MemoryPointer memoryPointer = new MemoryPointer(
 							currentOffset, startingOffset);

@@ -4,3 +4,7 @@ configuration.properties
 Pointers.txt
 /binaries
 /target
+/.classpath
+/.project
+/.idea
+/dumps

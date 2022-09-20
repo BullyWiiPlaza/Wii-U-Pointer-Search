@@ -1,24 +1,11 @@
 package com.bullywiihacks.hacking.pointer;
 
-import javax.swing.JFrame;
+import javax.swing.*;
 
 import java.awt.Color;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingWorker;
-import javax.swing.JMenuBar;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JButton;
-import javax.swing.JLabel;
 
 import com.bullywiihacks.hacking.pointer.memory.MemoryDump;
 import com.bullywiihacks.hacking.pointer.search.PointerSearch;
@@ -54,22 +41,16 @@ public class PointerSearcherGui extends JFrame
 	private JButton readButton;
 	private JCheckBoxMenuItem storeToFileOption;
 
-	List<MemoryDump> memoryDumps;
+	private List<MemoryDump> memoryDumps;
 
 	public PointerSearcherGui() throws IOException, InterruptedException
 	{
 		simpleProperties = new SimpleProperties();
-
 		setFrameProperties();
-
 		setMenuBar();
-
 		setFrameLayout();
-
 		setReadMemoryDumpsButton();
-
 		setSearchButton();
-
 		setResultsArea();
 	}
 
@@ -79,82 +60,79 @@ public class PointerSearcherGui extends JFrame
 		searchButton = new JButton(searchButtonText);
 		searchButton
 				.setToolTipText("Performs a pointer search if at least a memory dump source directory is given");
-		searchButton.addActionListener(new ActionListener()
+		searchButton.addActionListener(searchPerformed ->
 		{
-			public void actionPerformed(ActionEvent searchPerformed)
+			searchButton.setEnabled(false);
+			searchButton.setText("Searching...");
+			outputTextArea.setText("");
+
+			new SwingWorker<String, String>()
 			{
-				searchButton.setEnabled(false);
-				searchButton.setText("Searching...");
-				outputTextArea.setText("");
-
-				new SwingWorker<String, String>()
+				@Override
+				protected String doInBackground()
 				{
-					@Override
-					protected String doInBackground()
+					try
 					{
-						try
+						String storedMaximumPointerOffsetString = simpleProperties
+								.get(OptionKeys.MAXIMUM_OFFSET);
+						String storedAllowNegativeOffsetsString = simpleProperties
+								.get(OptionKeys.NEGATIVE_OFFSETS);
+
+						pointerSearch = new WiiUPointerSearch(memoryDumps);
+
+						if (storedMaximumPointerOffsetString != null)
 						{
-							String storedMaximumPointerOffsetString = simpleProperties
-									.get(OptionKeys.MAXIMUM_OFFSET);
-							String storedAllowNegativeOffsetsString = simpleProperties
-									.get(OptionKeys.NEGATIVE_OFFSETS);
-
-							pointerSearch = new WiiUPointerSearch(memoryDumps);
-
-							if (storedMaximumPointerOffsetString != null)
-							{
-								int storedMaximumPointerOffset = Integer
-										.parseInt(
-												storedMaximumPointerOffsetString,
-												16);
-								pointerSearch
-										.setMaximumPointerOffset(storedMaximumPointerOffset);
-							}
-
-							if (storedAllowNegativeOffsetsString != null)
-							{
-								boolean storedAllowNegativeOffsets = Boolean
-										.parseBoolean(storedAllowNegativeOffsetsString);
-								pointerSearch
-										.setAllowNegativeOffsets(storedAllowNegativeOffsets);
-							}
-
-							String storedPointerInPointerValue = simpleProperties.get(
-									OptionKeys.POINTER_IN_POINTER);
-
-							if (storedPointerInPointerValue == null || storedPointerInPointerValue.equals("false"))
-							{
-								System.out.println("Performing pointer search...");
-
-								pointerSearch
-										.performPointerSearch(storeToFileOption
-												.isSelected());
-							} else
-							{
-								System.out.println("Performing pointer in pointer search...");
-
-								pointerSearch
-										.performPointerInPointerSearch(storeToFileOption
-												.isSelected());
-							}
-
-							System.out.print("Search completed!");
-						} catch (Exception e)
-						{
-							e.printStackTrace();
+							int storedMaximumPointerOffset = Integer
+									.parseInt(
+											storedMaximumPointerOffsetString,
+											16);
+							pointerSearch
+									.setMaximumPointerOffset(storedMaximumPointerOffset);
 						}
 
-						return null;
+						if (storedAllowNegativeOffsetsString != null)
+						{
+							boolean storedAllowNegativeOffsets = Boolean
+									.parseBoolean(storedAllowNegativeOffsetsString);
+							pointerSearch
+									.setAllowNegativeOffsets(storedAllowNegativeOffsets);
+						}
+
+						String storedPointerInPointerValue = simpleProperties.get(
+								OptionKeys.POINTER_IN_POINTER);
+
+						if (storedPointerInPointerValue == null || storedPointerInPointerValue.equals("false"))
+						{
+							System.out.println("Performing pointer search...");
+
+							pointerSearch
+									.performPointerSearch(storeToFileOption
+											.isSelected());
+						} else
+						{
+							System.out.println("Performing pointer in pointer search...");
+
+							pointerSearch
+									.performPointerInPointerSearch(storeToFileOption
+											.isSelected());
+						}
+
+						System.out.print("Search completed!");
+					} catch (Exception e)
+					{
+						e.printStackTrace();
 					}
 
-					@Override
-					public void done()
-					{
-						searchButton.setEnabled(true);
-						searchButton.setText(searchButtonText);
-					}
-				}.execute();
-			}
+					return null;
+				}
+
+				@Override
+				public void done()
+				{
+					searchButton.setEnabled(true);
+					searchButton.setText(searchButtonText);
+				}
+			}.execute();
 		});
 
 		GridBagConstraints gbc_performSearchButton = new GridBagConstraints();
@@ -169,42 +147,38 @@ public class PointerSearcherGui extends JFrame
 	{
 		readButton = new JButton("Read memory dumps");
 
-		readButton.addActionListener(new ActionListener()
+		readButton.addActionListener(clickEvent ->
 		{
-			@Override
-			public void actionPerformed(ActionEvent clickEvent)
+			outputTextArea.setText("");
+			readButton.setEnabled(false);
+			String folder = simpleProperties
+					.get(OptionKeys.MEMORY_DUMPS_FOLDER);
+
+			System.out.print("Reading memory dump files into RAM... ");
+
+			new SwingWorker<String, String>()
 			{
-				outputTextArea.setText("");
-				readButton.setEnabled(false);
-				String folder = simpleProperties
-						.get(OptionKeys.MEMORY_DUMPS_FOLDER);
-
-				System.out.print("Reading memory dump files into RAM... ");
-
-				new SwingWorker<String, String>()
+				@Override
+				protected String doInBackground() throws Exception
 				{
-					@Override
-					protected String doInBackground() throws Exception
+					try
 					{
-						try
-						{
-							memoryDumps = BinaryFilesReader
-									.readMemoryDumps(folder);
+						memoryDumps = BinaryFilesReader
+								.readMemoryDumps(folder);
 
-							searchButton.setEnabled(true);
-							System.out.println("OK!");
-						} catch (IOException ioException)
-						{
-							ioException.printStackTrace();
-						} finally
-						{
-							readButton.setEnabled(true);
-						}
-
-						return null;
+						searchButton.setEnabled(true);
+						System.out.println("OK!");
+					} catch (IOException ioException)
+					{
+						ioException.printStackTrace();
+					} finally
+					{
+						readButton.setEnabled(true);
 					}
-				}.execute();
-			}
+
+					return null;
+				}
+			}.execute();
 		});
 
 		GridBagConstraints gbc_readMemoryDumps = new GridBagConstraints();
@@ -257,13 +231,9 @@ public class PointerSearcherGui extends JFrame
 		menuBar.add(optionsMenu);
 
 		addMemoryDumpsFolderOption(optionsMenu);
-
 		addAllowNegativeOffsetsOption(optionsMenu);
-
 		addMaximumPointerOffsetOption(optionsMenu);
-
 		addPointerInPointerOption(optionsMenu);
-
 		addStoreToFileOption(optionsMenu);
 	}
 
@@ -295,34 +265,30 @@ public class PointerSearcherGui extends JFrame
 					folderPathField.setText(storedMemoryDumpsFolder);
 				}
 
-				browseFolderButton.addActionListener(new ActionListener()
+				browseFolderButton.addActionListener(browsingFolder ->
 				{
-					@Override
-					public void actionPerformed(ActionEvent browsingFolder)
+					JFileChooser fileChooser = new JFileChooser();
+					fileChooser
+							.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+					String currentFolderPath = folderPathField.getText();
+					File currentFolder = new File(currentFolderPath);
+
+					if (!currentFolder.exists())
 					{
-						JFileChooser fileChooser = new JFileChooser();
-						fileChooser
-								.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-						String currentFolderPath = folderPathField.getText();
-						File currentFolder = new File(currentFolderPath);
+						fileChooser.setCurrentDirectory(IOUtilities
+								.getWorkingDirectory());
+					} else
+					{
+						fileChooser.setCurrentDirectory(currentFolder);
+					}
 
-						if (!currentFolder.exists())
-						{
-							fileChooser.setCurrentDirectory(IOUtilities
-									.getWorkingDirectory());
-						} else
-						{
-							fileChooser.setCurrentDirectory(currentFolder);
-						}
+					int selection = fileChooser
+							.showOpenDialog(getRootPane());
 
-						int selection = fileChooser
-								.showOpenDialog(getRootPane());
-
-						if (selection == JFileChooser.APPROVE_OPTION)
-						{
-							folderPathField.setText(fileChooser
-									.getSelectedFile().getAbsolutePath());
-						}
+					if (selection == JFileChooser.APPROVE_OPTION)
+					{
+						folderPathField.setText(fileChooser
+								.getSelectedFile().getAbsolutePath());
 					}
 				});
 
@@ -361,15 +327,12 @@ public class PointerSearcherGui extends JFrame
 	{
 		JCheckBoxMenuItem allowNegativeOffsetsCheckBox = new JCheckBoxMenuItem(
 				"Allow negative offsets");
-		allowNegativeOffsetsCheckBox.addActionListener(new ActionListener()
+		allowNegativeOffsetsCheckBox.addActionListener(clickedEvent ->
 		{
-			public void actionPerformed(ActionEvent clickedEvent)
-			{
-				boolean isSelected = allowNegativeOffsetsCheckBox.isSelected();
+			boolean isSelected = allowNegativeOffsetsCheckBox.isSelected();
 
-				simpleProperties.put(OptionKeys.NEGATIVE_OFFSETS,
-						String.valueOf(isSelected));
-			}
+			simpleProperties.put(OptionKeys.NEGATIVE_OFFSETS,
+					String.valueOf(isSelected));
 		});
 		optionsMenu.add(allowNegativeOffsetsCheckBox);
 
@@ -449,17 +412,13 @@ public class PointerSearcherGui extends JFrame
 		JCheckBoxMenuItem pointerInPointerSearchCheckBox = new JCheckBoxMenuItem(
 				"Pointer in pointer search");
 
-		pointerInPointerSearchCheckBox.addActionListener(new ActionListener()
+		pointerInPointerSearchCheckBox.addActionListener(clickedEvent ->
 		{
-			@Override
-			public void actionPerformed(ActionEvent clickedEvent)
-			{
-				boolean isSelected = pointerInPointerSearchCheckBox
-						.isSelected();
+			boolean isSelected = pointerInPointerSearchCheckBox
+					.isSelected();
 
-				simpleProperties.put(OptionKeys.POINTER_IN_POINTER,
-						String.valueOf(isSelected));
-			}
+			simpleProperties.put(OptionKeys.POINTER_IN_POINTER,
+					String.valueOf(isSelected));
 		});
 
 		boolean pointerInPointerSelected = Boolean
@@ -474,15 +433,12 @@ public class PointerSearcherGui extends JFrame
 	private void addStoreToFileOption(JMenu optionsMenu)
 	{
 		storeToFileOption = new JCheckBoxMenuItem("Store to file");
-		storeToFileOption.addActionListener(new ActionListener()
+		storeToFileOption.addActionListener(clickedEvent ->
 		{
-			public void actionPerformed(ActionEvent clickedEvent)
-			{
-				boolean isSelected = storeToFileOption.isSelected();
+			boolean isSelected = storeToFileOption.isSelected();
 
-				simpleProperties.put(OptionKeys.STORE_TO_FILE,
-						String.valueOf(isSelected));
-			}
+			simpleProperties.put(OptionKeys.STORE_TO_FILE,
+					String.valueOf(isSelected));
 		});
 
 		boolean storeToFileOptionSelected = Boolean
@@ -497,7 +453,7 @@ public class PointerSearcherGui extends JFrame
 	{
 		setSize(500, 500);
 		setLocationRelativeTo(null);
-		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		setTitle(programName + " v" + programVersion + " by " + programAuthor);
 		setIconImage(Toolkit
 				.getDefaultToolkit()
@@ -509,12 +465,5 @@ public class PointerSearcherGui extends JFrame
 	private void setSearchButtonAvailability()
 	{
 		searchButton.setEnabled(memoryDumps != null);
-	}
-
-	public static void main(String[] arguments) throws Exception
-	{
-		ApplicationLaunchingUtilities.relaunchWithMoreMemory();
-
-		ApplicationLaunchingUtilities.runApplication();
 	}
 }

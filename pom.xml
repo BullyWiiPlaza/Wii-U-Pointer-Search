@@ -4,7 +4,6 @@
   <artifactId>Pointer-Search-WiiU</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <build>
-    <sourceDirectory>sources</sourceDirectory>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -17,10 +16,10 @@
     </plugins>
   </build>
   <dependencies>
-  <dependency>
-  	<groupId>commons-io</groupId>
-  	<artifactId>commons-io</artifactId>
-  	<version>2.4</version>
-  </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.11.0</version>
+    </dependency>
   </dependencies>
 </project>
